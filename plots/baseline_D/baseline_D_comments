@@ -1,0 +1,131 @@
+ BASELINE D — 2R Target + 50% Retrace Limit Entry
+#
+# Purpose:
+#   Tests whether waiting for a pullback (retrace entry) after a signal
+#   fires improves risk-adjusted performance over Baseline A's immediate
+#   market entry. Both use 2R as the target.
+#
+# Strategy Logic:
+#   - Same signal detection as Baseline A (London session, entry + confirm flags).
+#   - When a signal fires, instead of entering immediately at the next bar open,
+#     a LIMIT ORDER is placed at 50% of the signal candle's body/range.
+#       → Long signal: limit buy at (signal close − 50% × (close − low))
+#       → Short signal: limit sell at (signal close + 50% × (high − close))
+#   - The limit order is valid for up to 6 bars after the signal.
+#     If price never retraces to fill the limit, the trade is skipped entirely.
+#   - Stop Loss and TP are recalculated from the ACTUAL fill price (not signal close).
+#   - Take Profit at 2R from fill price.
+#   - NO Asia range filter.
+#   - NO EMA bias.
+#
+# Why this config matters:
+#   Retrace entries offer two potential advantages:
+#     1. Better entry price → tighter SL → smaller absolute risk per trade.
+#     2. Higher probability trades — price pulling back before running suggests
+#        liquidity was swept before the real move begins.
+#   The cost is: some valid trades are missed entirely (no fill → no trade).
+#   If D outperforms A, the retrace adds genuine edge.
+#   If D underperforms, too many winning trades are missed waiting for a pullback.
+#
+# Key difference from Baseline A:
+#   USE_RETRACE_ENTRY = True   → wait for 50% pullback before entering
+#   RETRACE_PCT       = 0.5    → pullback level is 50% of signal candle range
+#   (USE_NEXT_BAR_ENTRY remains True for context; the retrace logic overrides
+#    immediate fill and waits up to RETRACE_FILL_MAX_BARS = 6 bars for fill)
+#
+# Parameters set:
+#   RR_TARGET              = 2.0   → TP is 2× the initial risk (from fill price)
+#   USE_RETRACE_ENTRY      = True  → use 50% limit order instead of market fill
+#   RETRACE_PCT            = 0.5   → limit set at 50% of signal candle range
+#   USE_NEXT_BAR_ENTRY     = True  → retrace window starts from next bar onward
+#   USE_EMA_BIAS           = False → no trend filter
+#   ASIA_RANGE_MIN/MAX     = None  → no Asia session range guard
+#   LONDON_START/END       = 7, 11 → London open window only
+#   TIMEOUT_CAP_HOUR       = 20    → trade must resolve by 20:00 UTC
+#   RETRACE_FILL_MAX_BARS  = 6     → (set in core) give up if not filled in 6 bars
+#
+# Output:
+#   results/baseline_D_2R_retrace.csv
+# =============================================================================
+ 
+from pathlib import Path
+import sys
+ 
+# Add pipelines/ to path so we can import the shared backtest engine
+ROOT = Path(__file__).resolve().parent
+PIPELINES_DIR = ROOT / "pipelines"
+if str(PIPELINES_DIR) not in sys.path:
+    sys.path.append(str(PIPELINES_DIR))
+ 
+import backtest_baseline_optimized as core  # shared mechanical backtesting engine
+ 
+ 
+def run_baseline_D():
+    """
+    Configure and run Baseline D.
+ 
+    Adds a 50% retrace limit entry on top of Baseline A's setup.
+    Instead of filling immediately at the next bar open, the strategy
+    waits for price to pull back 50% into the signal candle before entering.
+ 
+    If the limit is not filled within 6 bars, the trade opportunity is skipped.
+    SL and TP are recalculated from the actual fill price.
+ 
+    Tests the hypothesis that a pullback entry improves trade quality
+    by entering closer to the origin of the signal move.
+    """
+ 
+    # --- Risk/Reward target ---
+    # Same 2R target as Baseline A — isolating the retrace entry's effect.
+    # Note: risk is calculated from the actual fill price, not signal close.
+    core.RR_TARGET = 2.0
+ 
+    # --- Retrace (limit) entry — KEY DIFFERENCE from Baseline A ---
+    # Instead of market entry, a limit order is placed at 50% of the
+    # signal candle's range, pulling price back toward the signal origin.
+    #
+    # For a LONG signal:
+    #   limit_price = signal_close - 0.5 × (signal_close - signal_low)
+    #   i.e., halfway between the close and the low of the signal candle
+    #
+    # For a SHORT signal:
+    #   limit_price = signal_close + 0.5 × (signal_high - signal_close)
+    #   i.e., halfway between the close and the high of the signal candle
+    #
+    # The limit is valid for up to 6 bars (RETRACE_FILL_MAX_BARS in core).
+    # If price never touches the limit, no trade is taken for that signal.
+    core.USE_RETRACE_ENTRY = True
+    core.RETRACE_PCT = 0.5  # 50% retrace into the signal candle
+ 
+    # --- Next-bar context still True ---
+    # When USE_RETRACE_ENTRY is True, the engine overrides immediate market fill.
+    # USE_NEXT_BAR_ENTRY = True ensures the retrace window starts from the
+    # next bar after the signal (not the signal bar itself).
+    core.USE_NEXT_BAR_ENTRY = True
+ 
+    # --- No EMA trend filter ---
+    # No directional bias — same as all other baselines.
+    core.USE_EMA_BIAS = False
+ 
+    # --- London session window ---
+    # Signals valid 07:00–11:00 UTC. Trade resolves by 20:00 UTC.
+    core.LONDON_START = 7
+    core.LONDON_END = 11
+    core.TIMEOUT_CAP_HOUR = 20
+ 
+    # --- No Asia range guard ---
+    # No overnight range quality check — same as Baselines A and B.
+    core.ASIA_RANGE_MIN = None
+    core.ASIA_RANGE_MAX = None
+ 
+    # --- Output path ---
+    out = ROOT / "results" / "baseline_D_2R_retrace.csv"
+    out.parent.mkdir(parents=True, exist_ok=True)
+    core.OUT = out
+ 
+    # Run the full backtest with the above configuration
+    core.main()
+ 
+ 
+if __name__ == "__main__":
+    run_baseline_D()
