@@ -1,0 +1,104 @@
+
+# BASELINE A — Purest / Simplest Strategy Configuration
+#
+# Purpose:
+#   This is the most basic version of the Auralis trading strategy.
+#   It serves as the control / reference point — no filters, no fancy entry,
+#   just raw signal + market execution at a 2R target.
+#
+# Strategy Logic:
+#   - A London session signal (07:00–11:00 UTC) is detected by the labeler.
+#   - Entry is taken on the NEXT BAR OPEN after the signal candle closes.
+#     (This is realistic — avoids look-ahead bias of entering on signal close.)
+#   - Stop Loss (SL) is placed below the signal candle low / Asia session low.
+#   - Take Profit (TP) is set at 2× the risk (2R).
+#   - 80% of position is closed at TP; runner moves SL to breakeven.
+#   - NO Asia range filter → trades are taken regardless of overnight range size.
+#   - NO EMA bias → no trend confirmation required; both longs and shorts allowed.
+#
+# Why this config matters:
+#   Baseline A isolates the raw signal quality. Its result (+15.58R) tells us
+#   how much edge the entry pattern alone has — before any ML or rule-based
+#   filtering is applied. All other baselines and the proposed model are
+#   compared against this floor.
+#
+# Parameters set:
+#   RR_TARGET            = 2.0    → TP is 2× the initial risk
+#   USE_NEXT_BAR_ENTRY   = True   → enter at open of bar after signal (no look-ahead)
+#   USE_RETRACE_ENTRY    = False  → no limit order; straight market fill
+#   USE_EMA_BIAS         = False  → no trend filter
+#   ASIA_RANGE_MIN/MAX   = None   → no Asia session range guard
+#   LONDON_START/END     = 7, 11  → only take signals in London open window
+#   TIMEOUT_CAP_HOUR     = 20     → trade must resolve by 20:00 UTC
+#
+# Output:
+#   results/baseline_A_2R.csv
+# =============================================================================
+ 
+from pathlib import Path
+import sys
+ 
+# Add pipelines/ to path so we can import the shared backtest engine
+ROOT = Path(__file__).resolve().parent
+PIPELINES_DIR = ROOT / "pipelines"
+if str(PIPELINES_DIR) not in sys.path:
+    sys.path.append(str(PIPELINES_DIR))
+ 
+import backtest_baseline_optimized as core  # shared mechanical backtesting engine
+ 
+ 
+def run_baseline_A():
+    """
+    Configure and run Baseline A.
+ 
+    Sets all strategy toggles on the shared backtest engine (core) to their
+    simplest values, then calls core.main() to execute the full backtest.
+ 
+    No filters, no retrace, no trend bias — just pure signal + 2R target.
+    """
+ 
+    # --- Risk/Reward target ---
+    # TP is placed at 2× the risk distance from entry.
+    # 80% of position closes here; runner moves to breakeven after hit.
+    core.RR_TARGET = 2.0
+ 
+    # --- Entry mode: next-bar market order ---
+    # Signal fires on bar close → we enter at the OPEN of the next bar.
+    # This avoids look-ahead bias (can't actually trade at signal bar's close in live).
+    core.USE_NEXT_BAR_ENTRY = True
+ 
+    # --- No retrace (limit) entry ---
+    # We do NOT wait for price to pull back 50% before entering.
+    # Trade is taken immediately at next bar open.
+    core.USE_RETRACE_ENTRY = False
+ 
+    # --- No EMA trend filter ---
+    # Both long and short signals are taken regardless of whether price
+    # is above or below the 200 EMA. No directional bias applied.
+    core.USE_EMA_BIAS = False
+ 
+    # --- London session window ---
+    # Signals are only valid between 07:00 and 11:00 UTC (London open).
+    # Trade must resolve (SL or TP hit) before 20:00 UTC.
+    core.LONDON_START = 7
+    core.LONDON_END = 11
+    core.TIMEOUT_CAP_HOUR = 20
+ 
+    # --- No Asia range guard ---
+    # We do NOT check whether the Asian session had a "good" range size.
+    # Trades fire even if Asia was very tight (choppy) or very wide (volatile).
+    # Setting both to None disables this filter entirely.
+    core.ASIA_RANGE_MIN = None
+    core.ASIA_RANGE_MAX = None
+ 
+    # --- Output path ---
+    out = ROOT / "results" / "baseline_A_2R.csv"
+    out.parent.mkdir(parents=True, exist_ok=True)
+    core.OUT = out
+ 
+    # Run the full backtest with the above configuration
+    core.main()
+ 
+ 
+if __name__ == "__main__":
+    run_baseline_A()
