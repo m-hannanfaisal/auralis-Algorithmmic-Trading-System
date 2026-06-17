@@ -1,0 +1,122 @@
+ BASELINE C — 2R Target + Asia Range Quality Filter
+#
+# Purpose:
+#   Tests whether filtering out "bad" trading days (based on Asia session
+#   range size) improves strategy performance over Baseline A.
+#   Both use 2R as the target — the only difference is the Asia range guard.
+#
+# Strategy Logic:
+#   - Same signal detection as Baseline A (London session, entry + confirm flags).
+#   - Entry on next bar open (no look-ahead bias).
+#   - Stop Loss placed below signal candle low / Asia session low.
+#   - Take Profit at 2R (same as Baseline A).
+#   - ASIA RANGE FILTER ACTIVE: only trade days where the Asia session
+#     (00:00–06:00 UTC) had a high–low range between $3 and $7.
+#       → Range < $3: Asia was too quiet → London may not break out cleanly.
+#       → Range > $7: Asia was too volatile → stop levels may be compromised.
+#   - NO EMA bias.
+#
+# Why this config matters:
+#   The Asia range is a proxy for overnight "compression."
+#   The hypothesis is: when Asia consolidates in a moderate range, London
+#   is more likely to make a clean directional move that respects stops
+#   and reaches the TP target. Days with abnormal Asia behaviour are skipped.
+#
+#   Comparing C vs A directly isolates the value of the Asia range filter.
+#   If C > A in net R, the filter is adding real edge.
+#   If C ≈ A or C < A, the filter is either too tight or not meaningful.
+#
+# Key difference from Baseline A:
+#   ASIA_RANGE_MIN = 3.0   (filter out days where Asia range < $3)
+#   ASIA_RANGE_MAX = 7.0   (filter out days where Asia range > $7)
+#
+# Parameters set:
+#   RR_TARGET            = 2.0    → TP is 2× the initial risk
+#   USE_NEXT_BAR_ENTRY   = True   → enter at open of bar after signal
+#   USE_RETRACE_ENTRY    = False  → straight market fill, no limit order
+#   USE_EMA_BIAS         = False  → no trend filter
+#   ASIA_RANGE_MIN       = 3.0    → skip days where Asia range < $3 (too quiet)
+#   ASIA_RANGE_MAX       = 7.0    → skip days where Asia range > $7 (too wild)
+#   LONDON_START/END     = 7, 11  → London open window only
+#   TIMEOUT_CAP_HOUR     = 20     → trade must resolve by 20:00 UTC
+#
+# Output:
+#   results/baseline_C_2R_asiaFilter.csv
+# =============================================================================
+ 
+from pathlib import Path
+import sys
+ 
+# Add pipelines/ to path so we can import the shared backtest engine
+ROOT = Path(__file__).resolve().parent
+PIPELINES_DIR = ROOT / "pipelines"
+if str(PIPELINES_DIR) not in sys.path:
+    sys.path.append(str(PIPELINES_DIR))
+ 
+import backtest_baseline_optimized as core  # shared mechanical backtesting engine
+ 
+ 
+def run_baseline_C():
+    """
+    Configure and run Baseline C.
+ 
+    Same as Baseline A (2R, next-bar market entry) but with an Asia session
+    range quality filter added. Days where the Asia high–low range falls
+    outside $3–$7 are skipped entirely (no trade taken that day).
+ 
+    Tests the hypothesis that moderate overnight compression improves
+    London breakout signal quality.
+    """
+ 
+    # --- Risk/Reward target ---
+    # Same 2R target as Baseline A — we want to isolate the Asia filter's
+    # effect without changing the TP level at the same time.
+    core.RR_TARGET = 2.0
+ 
+    # --- Entry mode: next-bar market order ---
+    # Same as Baseline A: enter at open of bar following the signal candle.
+    core.USE_NEXT_BAR_ENTRY = True
+ 
+    # --- No retrace (limit) entry ---
+    # Market fill at next bar open; no pullback wait.
+    core.USE_RETRACE_ENTRY = False
+ 
+    # --- No EMA trend filter ---
+    # No directional bias; signals in either direction are accepted.
+    core.USE_EMA_BIAS = False
+ 
+    # --- London session window ---
+    # Signals valid 07:00–11:00 UTC. Trade resolves by 20:00 UTC.
+    core.LONDON_START = 7
+    core.LONDON_END = 11
+    core.TIMEOUT_CAP_HOUR = 20
+ 
+    # --- Asia range filter (KEY DIFFERENCE from Baseline A) ---
+    # Before taking any trade on a given day, the Asia session range
+    # (00:00–06:00 UTC high minus low) is checked:
+    #
+    #   ASIA_RANGE_MIN = 3.0:
+    #     Skip days where Asia range < $3.
+    #     A very tight Asia range suggests no meaningful overnight accumulation.
+    #     London on such days tends to be choppy rather than directional.
+    #
+    #   ASIA_RANGE_MAX = 7.0:
+    #     Skip days where Asia range > $7.
+    #     An extremely wide Asia range means volatility is already exhausted,
+    #     or stop levels defined by Asia high/low are too wide, degrading R quality.
+    #
+    # Only days where 3 <= Asia range <= 7 are eligible for trading.
+    core.ASIA_RANGE_MIN = 3.0
+    core.ASIA_RANGE_MAX = 7.0
+ 
+    # --- Output path ---
+    out = ROOT / "results" / "baseline_C_2R_asiaFilter.csv"
+    out.parent.mkdir(parents=True, exist_ok=True)
+    core.OUT = out
+ 
+    # Run the full backtest with the above configuration
+    core.main()
+ 
+ 
+if __name__ == "__main__":
+    run_baseline_C()
