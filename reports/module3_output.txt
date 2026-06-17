@@ -1,0 +1,38 @@
+============================================================
+Module 3: TradeManager & Risk Engine (LinkedList + MaxHeap)
+============================================================
+
+Configuration:
+  - Max risk budget: 50.0
+  - Max concurrent trades: 5
+
+1. Adding trades to manager...
+   ✓ Added: Trade(358262f3, LONG XAUUSD, risk=1.61)
+   ✓ Added: Trade(a569e84f, SHORT XAUUSD, risk=20.93)
+   ✓ Added: Trade(8e72829f, LONG XAUUSD, risk=2.42)
+   ✓ Added: Trade(760febf3, SHORT XAUUSD, risk=1.43)
+   ✓ Added: Trade(70ec7c40, LONG XAUUSD, risk=17.92)
+
+2. Current State:
+   - Active trades: 5
+   - Total risk: 44.31
+   - Risk utilization: 88.6%
+   - Highest risk: Trade(a569e84f, SHORT XAUUSD, risk=20.93)
+
+3. Trades sorted by risk (MaxHeap extraction order):
+   1. a569e84f - SHORT - Risk: 20.93
+   2. 70ec7c40 - LONG - Risk: 17.92
+   3. 8e72829f - LONG - Risk: 2.42
+   4. 358262f3 - LONG - Risk: 1.61
+   5. 760febf3 - SHORT - Risk: 1.43
+
+4. Greedy Risk Enforcement:
+   Reducing risk budget to 20.0...
+   - Active trades after enforcement: 3
+   - Total risk now: 5.46
+   - Trades removed for risk: 2
+
+5. Remaining trades (Linked List traversal):
+   - Trade(358262f3, LONG XAUUSD, risk=1.61)
+   - Trade(8e72829f, LONG XAUUSD, risk=2.42)
+   - Trade(760febf3, SHORT XAUUSD, risk=1.43)

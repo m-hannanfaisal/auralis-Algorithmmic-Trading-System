@@ -1,0 +1,33 @@
+============================================================
+Module 2: SessionManager (AVL Tree / Balanced BST)
+============================================================
+
+1. AVL Tree Structure after inserting sessions:
+Root: Session(London: 07:00-15:00) (h=2)
+    L--- Session(Asian: 00:00-06:00) (h=1)
+    R--- Session(NewYork: 13:00-21:00) (h=1)
+
+2. Tree Statistics:
+   - Number of sessions: 3
+   - Tree height: 2
+   - Total rotations: 1
+   - Is balanced: True
+
+3. All sessions (in-order traversal):
+   - Asian: 00:00 - 06:00 UTC
+   - London: 07:00 - 15:00 UTC
+   - NewYork: 13:00 - 21:00 UTC
+
+4. Session Classification (O(log n) lookup):
+   - 02:30 UTC → Asian (comparisons: 2)
+   - 05:30 UTC → Asian (comparisons: 2)
+   - 08:30 UTC → London (comparisons: 1)
+   - 12:30 UTC → London (comparisons: 1)
+   - 15:30 UTC → NewYork (comparisons: 2)
+   - 18:30 UTC → NewYork (comparisons: 2)
+   - 22:30 UTC → Off-Hours (comparisons: 2)
+
+5. Trading Hours Check:
+   - 03:00 (Asian): London trading = False
+   - 09:00 (London): London trading = True
+   - 22:00 (Off-Hours): London trading = False

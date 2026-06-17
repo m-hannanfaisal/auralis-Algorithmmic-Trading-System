@@ -1,0 +1,209 @@
+
+██████████████████████████████████████████████████████████████████████
+█                                                                    █
+█            AURALIS-DSA: Optimized Market Session Analyzer          █
+█                         & Trade Risk Engine                        █
+█                                                                    █
+█                CS-250 — Data Structures & Algorithms               █
+█                     Instructor: Dr. Ayesha Hakim                   █
+█                                                                    █
+██████████████████████████████████████████████████████████████████████
+
+📚 Group Members:
+   1. Muntazir Mehdi — CMS: 503710
+   2. Muhammad Hannan Faisal — CMS: 507444
+   3. Muhammad Sammar Abbas — CMS: 509701
+
+──────────────────────────────────────────────────────────────────────
+Loading XAUUSD market data...
+✓ Loaded 828,000 candles from 2018-2025
+
+======================================================================
+  MODULE 1: CandleStore (Dynamic Array + Binary Search)
+======================================================================
+
+📊 Loading XAUUSD M5 data into CandleStore...
+
+✅ Data Loaded Successfully!
+   • Candles stored: 10,000
+   • Array capacity: 16,384
+   • Array resizes (doubling): 11
+   • Load factor: 61.04%
+
+──────────────────────────────────────────────────
+  Binary Search Performance
+──────────────────────────────────────────────────
+
+🔍 Searching for timestamp: 2018-01-18 03:40:00
+   ✓ Found at index 5000
+   ✓ Candle: O=1326.17, H=1326.21, L=1325.51, C=1325.61
+   ✓ Comparisons made: 13
+   ✓ Expected O(log n) ≈ 14
+
+──────────────────────────────────────────────────
+  Session Range Calculation
+──────────────────────────────────────────────────
+
+📈 Asian Session Range for 2017-12-31:
+   • Asia High: $0.00
+   • Asia Low:  $0.00
+   • Range:     $0.00
+
+======================================================================
+  MODULE 2: SessionManager (AVL Tree)
+======================================================================
+
+🌳 AVL Tree Structure:
+   (Sessions stored as interval nodes)
+
+Root: Session(London: 07:00-15:00) (h=2)
+    L--- Session(Asian: 00:00-06:00) (h=1)
+    R--- Session(NewYork: 13:00-21:00) (h=1)
+
+✅ Tree Statistics:
+   • Number of sessions: 3
+   • Tree height: 2
+   • Rotations performed: 1
+   • Is balanced: True
+
+──────────────────────────────────────────────────
+  Session Classification (O(log n) Lookup)
+──────────────────────────────────────────────────
+
+⏰ Classifying hours throughout the trading day:
+   Hour (UTC)   Session         Comparisons
+   ------------ --------------- ------------
+   00:30        Asian           2
+   03:30        Asian           2
+   06:30        Off-Hours       2
+   09:30        London          1
+   12:30        London          1
+   15:30        NewYork         2
+   18:30        NewYork         2
+   21:30        Off-Hours       2
+
+──────────────────────────────────────────────────
+  Trading Hours Filter
+──────────────────────────────────────────────────
+
+🇬🇧 London Session Filter Check:
+   03:00 UTC (Asian     ) → ✗ SKIP
+   08:00 UTC (London    ) → ✓ ALLOW
+   14:00 UTC (London    ) → ✓ ALLOW
+   22:00 UTC (Off-Hours ) → ✗ SKIP
+
+======================================================================
+  MODULE 3: TradeManager (Linked List + Max-Heap)
+======================================================================
+
+⚙️ Risk Engine Configuration:
+   • Max risk budget: 100.0
+   • Max concurrent trades: 6
+
+──────────────────────────────────────────────────
+  Adding Trades
+──────────────────────────────────────────────────
+
+📝 Inserting trades into LinkedList (O(1)) + MaxHeap (O(log n)):
+   ✓ Conservative long: Risk Score = 2.38
+   ✓ Aggressive short: Risk Score = 6.24
+   ✓ Wide stop long: Risk Score = 5.39
+   ✓ Tight stop short: Risk Score = 1.52
+   ✓ High risk position: Risk Score = 18.49
+   ✓ Medium risk short: Risk Score = 2.86
+
+📊 Current Portfolio Status:
+   • Active trades: 6
+   • Total risk: 36.89
+   • Risk utilization: 36.9%
+
+──────────────────────────────────────────────────
+  Risk-Based Prioritization (Max-Heap)
+──────────────────────────────────────────────────
+
+🔺 Trades sorted by risk (Heap extraction order):
+   Rank   Direction Entry      Risk Score
+   ------ -------- ---------- ------------
+   1      LONG     $1945.00   18.49
+   2      SHORT    $1955.00   6.24
+   3      LONG     $1948.00   5.39
+   4      SHORT    $1960.00   2.86
+   5      LONG     $1950.00   2.38
+   6      SHORT    $1952.00   1.52
+
+──────────────────────────────────────────────────
+  Greedy Risk Enforcement Algorithm
+──────────────────────────────────────────────────
+
+⚠️ Reducing risk budget from 100.0 to 40.0...
+   Current total risk: 36.89
+   New budget: 40.00
+
+   Enforcing risk limits (greedy removal of highest-risk trades)...
+
+✅ After Risk Enforcement:
+   • Active trades: 6
+   • Total risk: 36.89
+   • Trades removed: 0
+
+📋 Remaining Trades (LinkedList traversal):
+   • LONG @ $1950.00 (Risk: 2.38)
+   • SHORT @ $1955.00 (Risk: 6.24)
+   • LONG @ $1948.00 (Risk: 5.39)
+   • SHORT @ $1952.00 (Risk: 1.52)
+   • LONG @ $1945.00 (Risk: 18.49)
+   • SHORT @ $1960.00 (Risk: 2.86)
+
+======================================================================
+  INTEGRATED WORKFLOW: All Modules Working Together
+======================================================================
+
+🔄 Simulating a trading workflow...
+
+1️⃣ Loading market data into CandleStore...
+   ✓ Loaded 2,000 candles
+
+2️⃣ Initializing SessionManager with AVL Tree...
+   ✓ 3 trading sessions configured
+
+3️⃣ Setting up TradeManager with risk limits...
+   ✓ Max risk: 50.0, Max trades: 3
+
+4️⃣ Simulating trade signals...
+   📈 Trade #1: LONG @ $1310.00 during London session
+   📈 Trade #2: LONG @ $1309.21 during London session
+   📈 Trade #3: LONG @ $1309.33 during London session
+   📈 Trade #4: LONG @ $1309.40 during London session
+   📈 Trade #5: LONG @ $1309.33 during London session
+
+📊 Simulation Results:
+   • Candles processed: 400
+   • London session signals: 164
+   • Trades taken: 5
+   • Final risk exposure: 1.81
+
+✅ All modules integrated successfully!
+
+======================================================================
+  DEMONSTRATION COMPLETE
+======================================================================
+
+✅ All three DSA modules demonstrated successfully!
+
+📋 Summary of Data Structures & Algorithms Used:
+   ┌─────────────────────────────────────────────────────────────┐
+   │ Module 1: CandleStore                                       │
+   │   • Dynamic Array (doubling strategy) - Amortized O(1)      │
+   │   • Binary Search - O(log n)                                │
+   ├─────────────────────────────────────────────────────────────┤
+   │ Module 2: SessionManager                                    │
+   │   • AVL Tree with rotations - O(log n) insert/search        │
+   │   • In-order traversal - O(n)                               │
+   ├─────────────────────────────────────────────────────────────┤
+   │ Module 3: TradeManager                                      │
+   │   • Doubly Linked List - O(1) insert/delete                 │
+   │   • Max-Heap - O(log n) insert/extract                      │
+   │   • Greedy algorithm for risk enforcement                   │
+   └─────────────────────────────────────────────────────────────┘
+
+🎯 Run 'python benchmark_dsa.py' for Big-O performance analysis.

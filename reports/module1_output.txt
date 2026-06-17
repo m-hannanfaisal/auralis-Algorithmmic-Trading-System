@@ -1,0 +1,19 @@
+============================================================
+Module 1: CandleStore (DynamicArray + Binary Search)
+============================================================
+
+Inserting 1000 candles...
+✓ Inserted 1000 candles
+  - Array capacity: 1024
+  - Resize operations: 7
+  - Load factor: 97.66%
+
+Binary Search for 2024-01-15 12:00:00...
+✓ Found: Candle(2024-01-15 12:00:00, O=1914.40, H=1915.40, L=1913.40, C=1914.90)
+  - Comparisons made: 10
+  - Expected O(log n) ≈ 34
+
+Calculating Asian Session Range...
+✓ Asia High: 1908.10
+✓ Asia Low: 1899.00
+✓ Asia Range: 9.10
